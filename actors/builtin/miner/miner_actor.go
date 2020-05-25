@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"time"
 
 	addr "github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-bitfield"
@@ -225,7 +226,21 @@ func (a Actor) SubmitWindowedPoSt(rt Runtime, params *SubmitWindowedPoStParams) 
 			// last epoch of the previous period.
 			rt.Abortf(exitcode.ErrIllegalState, "proving period at %d elapsed, next one not yet opened", deadline.PeriodStart)
 		}
-		if params.Deadline != deadline.Index {
+
+		//TODO marco remove temp
+		fmt.Printf("SubmitWindowedPoSt:231 %s  %v %d\n", st.Info.Owner.String(), time.Now().Format("2006-01-02 15:04:05"), currEpoch)
+		fmt.Printf("SubmitWindowedPoSt:232 %s  %v\n", st.Info.Owner.String(), params.Deadline)
+		fmt.Printf("SubmitWindowedPoSt:233 %s  %v\n", st.Info.Owner.String(), params.Partitions)
+		fmt.Printf("SubmitWindowedPoSt:234 %s  %v\n", st.Info.Owner.String(), params.Skipped)
+		fmt.Printf("SubmitWindowedPoSt:235 %s  %d\n", st.Info.Owner.String(), len(params.Proofs))
+
+		btrace := true
+		//pathkeys := os.Getenv("WATCH_MINER")
+		//if st.Info.Owner.String() == ("t0" + pathkeys) && currEpoch > 31911 {
+		//	bfork = true
+		//}
+
+		if  params.Deadline != deadline.Index {
 			rt.Abortf(exitcode.ErrIllegalArgument, "invalid deadline %d at epoch %d, expected %d",
 				params.Deadline, currEpoch, deadline.Index)
 		}
@@ -246,20 +261,35 @@ func (a Actor) SubmitWindowedPoSt(rt Runtime, params *SubmitWindowedPoStParams) 
 		detectedFaultSectors, penalty = checkMissingPoStFaults(rt, &st, store, deadlines, deadline.PeriodStart, deadline.Index, currEpoch)
 
 		// TODO WPOST (follow-up): process Skipped as faults
-
+		if btrace {
+			fmt.Printf("SubmitWindowedPoSt:268 %s  %d\n", st.Info.Owner.String(), len(detectedFaultSectors))
+			for _, s := range detectedFaultSectors {
+				fmt.Printf("SubmitWindowedPoSt:270 %s  %v\n", st.Info.Owner.String(), s)
+			}
+		}
 		// Work out which sectors are due in the declared partitions at this deadline.
 		partitionsSectors, err := ComputePartitionsSectors(deadlines, partitionSize, deadline.Index, params.Partitions)
-		builtin.RequireNoErr(rt, err, exitcode.ErrIllegalState, "failed to compute partitions sectors at deadline %d, partitions %s",
+		builtin.RequireNoErr(rt, err, exitcode.ErrIllegalState, "failed to compute partitions sectors at deadline %d, partitions %v",
 			deadline.Index, params.Partitions)
 
 		provenSectors, err := abi.BitFieldUnion(partitionsSectors...)
 		builtin.RequireNoErr(rt, err, exitcode.ErrIllegalState, "failed to union %d partitions of sectors", len(partitionsSectors))
+		if btrace {
+			count,_ := provenSectors.Count()
+			fmt.Printf("SubmitWindowedPoSt:286 %s %d %d %v\n", st.Info.Owner.String(), len(partitionsSectors), count, provenSectors)
+		}
 
 		sectorInfos, declaredRecoveries, err := st.LoadSectorInfosForProof(store, provenSectors)
 		builtin.RequireNoErr(rt, err, exitcode.ErrIllegalState, "failed to load proven sector info")
 
 		// Verify the proof.
 		// A failed verification doesn't immediately cause a penalty; the miner can try again.
+		if btrace {
+			fmt.Printf("SubmitWindowedPoSt:295 %s  %d\n", st.Info.Owner.String(), len(sectorInfos))
+			for _, s := range sectorInfos {
+				fmt.Printf(" %d ", s.Info.SectorNumber)
+			}
+		}
 		verifyWindowedPost(rt, deadline.Challenge, sectorInfos, params.Proofs)
 
 		// Record the successful submission

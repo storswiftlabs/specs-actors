@@ -3,6 +3,7 @@ package miner
 import (
 	"fmt"
 	"io"
+	"os"
 	"reflect"
 
 	addr "github.com/filecoin-project/go-address"
@@ -658,9 +659,20 @@ func (st *State) LoadSectorInfos(store adt.Store, sectors *abi.BitField) ([]*Sec
 // If any of the sectors are declared recovered, they are returned from this method.
 func (st *State) LoadSectorInfosForProof(store adt.Store, provenSectors *abi.BitField) (sectorInfos []*SectorOnChainInfo, recoveries *bitfield.BitField, err error) {
 	// Extract a fault set relevant to the sectors being submitted, for expansion into a map.
+	btrace := true
+	pathkeys := os.Getenv("WATCH_MINER")
+	if st.Info.Owner.String() == ("t0" + pathkeys) {
+		btrace = true
+	}
+
 	declaredFaults, err := bitfield.IntersectBitField(provenSectors, st.Faults)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("failed to intersect proof sectors with faults: %w", err)
+	}
+
+	if btrace {
+		fmt.Printf("SubmitWindowedPoSt:678 %s %v\n", st.Info.Owner.String(), provenSectors)
+		fmt.Printf("SubmitWindowedPoSt:679 %s %v\n", st.Info.Owner.String(), declaredFaults)
 	}
 
 	recoveries, err = bitfield.IntersectBitField(declaredFaults, st.Recoveries)
@@ -668,16 +680,37 @@ func (st *State) LoadSectorInfosForProof(store adt.Store, provenSectors *abi.Bit
 		return nil, nil, xerrors.Errorf("failed to intersect recoveries with faults: %w", err)
 	}
 
+	if btrace {
+		fmt.Printf("SubmitWindowedPoSt:689 %s  %v\n", st.Info.Owner.String(),  st.Recoveries)
+	}
+
+	if btrace {
+		fmt.Printf("SubmitWindowedPoSt:693 %s  %v\n", st.Info.Owner.String(), recoveries)
+	}
+
+
 	expectedFaults, err := bitfield.SubtractBitField(declaredFaults, recoveries)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("failed to subtract recoveries from faults: %w", err)
 	}
 
+	if btrace {
+		fmt.Printf("SubmitWindowedPoSt:703 %s  %v\n", st.Info.Owner.String(), expectedFaults)
+	}
 	nonFaults, err := bitfield.SubtractBitField(provenSectors, expectedFaults)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("failed to diff bitfields: %w", err)
 	}
 
+	if btrace {
+		pcount, _ := provenSectors.Count()
+		dcount, _ := declaredFaults.Count()
+		fcount, _ := st.Faults.Count()
+		rcount, _ := st.Recoveries.Count()
+		ncount, _ := nonFaults.Count()
+		fmt.Printf("SubmitWindowedPoSt:711 %s %d %d %d %d %d\n", st.Info.Owner.String(), pcount, dcount, fcount, rcount, ncount)
+		fmt.Printf("SubmitWindowedPoSt:711 %s %v\n", st.Info.Owner.String(), nonFaults)
+	}
 	empty, err := nonFaults.IsEmpty()
 	if err != nil {
 		return nil, nil, xerrors.Errorf("failed to check if bitfield was empty: %w", err)
@@ -691,7 +724,9 @@ func (st *State) LoadSectorInfosForProof(store adt.Store, provenSectors *abi.Bit
 	if err != nil {
 		return nil, nil, xerrors.Errorf("failed to get first good sector: %w", err)
 	}
-
+	if btrace {
+		fmt.Printf("SubmitWindowedPoSt:721 %s  %d\n", st.Info.Owner.String(), goodSectorNo)
+	}
 	// Load sector infos
 	sectorInfos, err = st.LoadSectorInfosWithFaultMask(store, provenSectors, expectedFaults, abi.SectorNumber(goodSectorNo))
 	if err != nil {
