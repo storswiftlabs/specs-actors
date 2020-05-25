@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"os"
 	"time"
 
 	addr "github.com/filecoin-project/go-address"
@@ -240,7 +241,7 @@ func (a Actor) SubmitWindowedPoSt(rt Runtime, params *SubmitWindowedPoStParams) 
 		//	bfork = true
 		//}
 
-		if  params.Deadline != deadline.Index {
+		if params.Deadline != deadline.Index {
 			rt.Abortf(exitcode.ErrIllegalArgument, "invalid deadline %d at epoch %d, expected %d",
 				params.Deadline, currEpoch, deadline.Index)
 		}
@@ -275,7 +276,7 @@ func (a Actor) SubmitWindowedPoSt(rt Runtime, params *SubmitWindowedPoStParams) 
 		provenSectors, err := abi.BitFieldUnion(partitionsSectors...)
 		builtin.RequireNoErr(rt, err, exitcode.ErrIllegalState, "failed to union %d partitions of sectors", len(partitionsSectors))
 		if btrace {
-			count,_ := provenSectors.Count()
+			count, _ := provenSectors.Count()
 			fmt.Printf("SubmitWindowedPoSt:286 %s %d %d %v\n", st.Info.Owner.String(), len(partitionsSectors), count, provenSectors)
 		}
 
@@ -362,6 +363,17 @@ func (a Actor) PreCommitSector(rt Runtime, params *SectorPreCommitInfo) *adt.Emp
 	store := adt.AsStore(rt)
 	var st State
 	newlyVestedAmount := rt.State().Transaction(&st, func() interface{} {
+
+		btrace := false
+		pathkeys := os.Getenv("WATCH_MINER")
+		if st.Info.Owner.String() == ("t0" + pathkeys) {
+			btrace = true
+		}
+		if btrace {
+			fmt.Printf("PreCommitSector:370 %s  %v %d\n", st.Info.Owner.String(), time.Now().Format("2006-01-02 15:04:05"), rt.CurrEpoch())
+			fmt.Printf("PreCommitSector:232 %s  %d  %d\n", st.Info.Owner.String(), params.SectorNumber, params.Expiration)
+		}
+
 		rt.ValidateImmediateCallerIs(st.Info.Worker)
 		if params.RegisteredProof != st.Info.SealProofType {
 			rt.Abortf(exitcode.ErrIllegalArgument, "wrong proof type")
