@@ -1236,7 +1236,7 @@ func popExpiredFaults(st *State, store adt.Store, latestTermination abi.ChainEpo
 	var ongoingFaults []*abi.BitField
 	errDone := fmt.Errorf("done")
 	err := st.ForEachFaultEpoch(store, func(faultStart abi.ChainEpoch, faults *abi.BitField) error {
-		fmt.Printf("popExpiredFaults:1239 %s %d %d %v\n", st.Info.Owner.String(), faultStart, latestTermination)
+		fmt.Printf("popExpiredFaults:1239 %s %d %d \n", st.Info.Owner.String(), faultStart, latestTermination)
 		if faultStart <= latestTermination {
 			expiredFaults = append(expiredFaults, faults)
 			expiredEpochs = append(expiredEpochs, faultStart)
