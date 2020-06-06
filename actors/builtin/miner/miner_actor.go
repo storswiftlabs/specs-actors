@@ -804,6 +804,8 @@ func (a Actor) DeclareFaultsRecovered(rt Runtime, params *DeclareFaultsRecovered
 		deadlines, err := st.LoadDeadlines(adt.AsStore(rt))
 		builtin.RequireNoErr(rt, err, exitcode.ErrIllegalState, "failed to load deadlines")
 
+		fmt.Printf("DeclareFaultsRecovered:807 %s  %v %d\n", st.Info.Owner.String(), time.Now().Format("2006-01-02 15:04:05"), currEpoch)
+
 		var declaredSectors []*abi.BitField
 		for _, decl := range params.Recoveries {
 			targetDeadline, err := declarationDeadlineInfo(st.ProvingPeriodStart, decl.Deadline, currEpoch)
@@ -814,6 +816,7 @@ func (a Actor) DeclareFaultsRecovered(rt Runtime, params *DeclareFaultsRecovered
 			declaredSectors = append(declaredSectors, decl.Sectors)
 		}
 
+		fmt.Printf("DeclareFaultsRecovered:819 %s  %v\n", st.Info.Owner.String(), params.Recoveries)
 		allRecoveries, err := abi.BitFieldUnion(declaredSectors...)
 		builtin.RequireNoErr(rt, err, exitcode.ErrIllegalState, "failed to union recoveries")
 
@@ -822,12 +825,14 @@ func (a Actor) DeclareFaultsRecovered(rt Runtime, params *DeclareFaultsRecovered
 		if !contains {
 			rt.Abortf(exitcode.ErrIllegalArgument, "declared recoveries not currently faulty")
 		}
+
+		fmt.Printf("DeclareFaultsRecovered:829 %s  %v\n", st.Info.Owner.String(), st.Faults)
 		contains, err = abi.BitFieldContainsAny(st.Recoveries, allRecoveries)
 		builtin.RequireNoErr(rt, err, exitcode.ErrIllegalState, "failed to intersect new recoveries")
 		if contains {
 			rt.Abortf(exitcode.ErrIllegalArgument, "sector already declared recovered")
 		}
-
+		fmt.Printf("DeclareFaultsRecovered:835 %s  %v\n", st.Info.Owner.String(), st.Recoveries)
 		err = st.AddRecoveries(allRecoveries)
 		builtin.RequireNoErr(rt, err, exitcode.ErrIllegalArgument, "invalid recoveries")
 		return nil
@@ -1324,6 +1329,9 @@ func terminateSectors(rt Runtime, sectorNos *abi.BitField, terminationType power
 
 		deadlines, err := st.LoadDeadlines(store)
 		builtin.RequireNoErr(rt, err, exitcode.ErrIllegalState, "failed to load deadlines")
+
+		fmt.Printf("terminateSectors:1332 %s  %v %v\n", st.Info.Owner.String(), time.Now().Format("2006-01-02 15:04:05"), terminationType)
+		fmt.Printf("terminateSectors:1333 %s %d  %v\n", st.Info.Owner.String(), rt.CurrEpoch(), sectorNos)
 
 		err = removeTerminatedSectors(&st, store, deadlines, sectorNos)
 		if err != nil {
