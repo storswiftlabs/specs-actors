@@ -983,6 +983,13 @@ func handleProvingPeriod(rt Runtime) {
 	// Further, this method is invoked once *before* the first proving period starts, after the actor is first
 	// constructed; this is detected by !deadline.PeriodStarted().
 	// Use deadline.PeriodEnd() rather than rt.CurrEpoch unless certain of the desired semantics.
+
+	btrace := false
+	pathkeys := os.Getenv("WATCH_MINER")
+	if st.Info.Owner.String() == ("t0" + pathkeys) {
+		btrace = true
+	}
+
 	var deadline *DeadlineInfo
 	{
 		// Vest locked funds.
@@ -1010,6 +1017,11 @@ func handleProvingPeriod(rt Runtime) {
 			}
 			return nil
 		})
+
+		if btrace {
+			fmt.Printf("handleProvingPeriod: %s  %v %d\n", st.Info.Owner.String(), time.Now().Format("2006-01-02 15:04:05"), rt.CurrEpoch())
+			fmt.Printf("handleProvingPeriod: %s  %d \n", st.Info.Owner.String(), len(detectedFaultSectors))
+		}
 
 		// Remove power for new faults, and burn penalties.
 		requestBeginFaults(rt, st.Info.SectorSize, detectedFaultSectors)
@@ -1049,6 +1061,20 @@ func handleProvingPeriod(rt Runtime) {
 			builtin.RequireNoErr(rt, err, exitcode.ErrIllegalState, "failed to charge fault fee")
 			return nil
 		})
+
+		if btrace {
+			c, _ := expiredFaults.Count()
+			o, _ := ongoingFaults.Count()
+			fmt.Printf("handleProvingPeriod: %s  %v %d\n", st.Info.Owner.String(), time.Now().Format("2006-01-02 15:04:05"), rt.CurrEpoch())
+			fmt.Printf("handleProvingPeriod: 1068 %s  %d \n", st.Info.Owner.String(), c, o)
+
+			expiredFaults.ForEach(func(snum uint64) error {
+				fmt.Printf(" %d ", snum)
+				return nil
+			})
+			fmt.Printf("\n")
+
+		}
 
 		terminateSectors(rt, expiredFaults, power.SectorTerminationFaulty)
 		burnFundsAndNotifyPledgeChange(rt, ongoingFaultPenalty)
@@ -1210,6 +1236,7 @@ func popExpiredFaults(st *State, store adt.Store, latestTermination abi.ChainEpo
 	var ongoingFaults []*abi.BitField
 	errDone := fmt.Errorf("done")
 	err := st.ForEachFaultEpoch(store, func(faultStart abi.ChainEpoch, faults *abi.BitField) error {
+		fmt.Printf("popExpiredFaults:1239 %s %d %d %v\n", st.Info.Owner.String(), faultStart, latestTermination)
 		if faultStart <= latestTermination {
 			expiredFaults = append(expiredFaults, faults)
 			expiredEpochs = append(expiredEpochs, faultStart)
