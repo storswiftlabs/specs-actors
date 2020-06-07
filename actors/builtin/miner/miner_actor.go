@@ -1070,7 +1070,7 @@ func handleProvingPeriod(rt Runtime) {
 			c, _ := expiredFaults.Count()
 			o, _ := ongoingFaults.Count()
 			fmt.Printf("handleProvingPeriod: %s  %v %d\n", st.Info.Owner.String(), time.Now().Format("2006-01-02 15:04:05"), rt.CurrEpoch())
-			fmt.Printf("handleProvingPeriod: 1075 %s  %d \n", st.Info.Owner.String(), c, o)
+			fmt.Printf("handleProvingPeriod: 1075 %s  %d %d ", st.Info.Owner.String(), c, o)
 
 			expiredFaults.ForEach(func(snum uint64) error {
 				fmt.Printf(" %d ", snum)
@@ -1240,7 +1240,13 @@ func popExpiredFaults(st *State, store adt.Store, latestTermination abi.ChainEpo
 	var ongoingFaults []*abi.BitField
 	errDone := fmt.Errorf("done")
 	err := st.ForEachFaultEpoch(store, func(faultStart abi.ChainEpoch, faults *abi.BitField) error {
-		fmt.Printf("popExpiredFaults:1239 %s %d %d \n", st.Info.Owner.String(), faultStart, latestTermination)
+		fmt.Printf("popExpiredFaults:1239 %s %d %d ", st.Info.Owner.String(), faultStart, latestTermination)
+		faults.ForEach(func(snum uint64) error {
+			fmt.Printf(" %d ", snum)
+			return nil
+		})
+		fmt.Printf("\n")
+
 		if faultStart <= latestTermination {
 			expiredFaults = append(expiredFaults, faults)
 			expiredEpochs = append(expiredEpochs, faultStart)
