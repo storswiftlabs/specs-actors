@@ -1251,6 +1251,8 @@ func popExpiredFaults(st *State, store adt.Store, latestTermination abi.ChainEpo
 			fmt.Printf("popExpiredFaults:1251 %s %d %d %v\n", st.Info.Owner.String(), faultStart, latestTermination, faults)
 			expiredFaults = append(expiredFaults, faults)
 			expiredEpochs = append(expiredEpochs, faultStart)
+			fmt.Printf("popExpiredFaults:1254 %s %d %d %v\n", st.Info.Owner.String(), faultStart, latestTermination, expiredFaults[0])
+
 		} else {
 			ongoingFaults = append(ongoingFaults, faults)
 		}
