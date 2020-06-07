@@ -1002,7 +1002,12 @@ func handleProvingPeriod(rt Runtime) {
 		var detectedFaultSectors []*SectorOnChainInfo
 		currEpoch := rt.CurrEpoch()
 		penalty := big.Zero()
+		btrace := false
 		rt.State().Transaction(&st, func() interface{} {
+			pathkeys := os.Getenv("WATCH_MINER")
+			if st.Info.Owner.String() == ("t0" + pathkeys) {
+				btrace = true
+			}
 			deadline = st.DeadlineInfo(currEpoch)
 			if deadline.PeriodStarted() { // Skip checking faults on the first, incomplete period.
 				deadlines, err := st.LoadDeadlines(store)
@@ -1011,12 +1016,6 @@ func handleProvingPeriod(rt Runtime) {
 			}
 			return nil
 		})
-
-		btrace := false
-		pathkeys := os.Getenv("WATCH_MINER")
-		if st.Info.Owner.String() == ("t0" + pathkeys) {
-			btrace = true
-		}
 
 		if btrace {
 			fmt.Printf("handleProvingPeriod: %s  %v %d\n", st.Info.Owner.String(), time.Now().Format("2006-01-02 15:04:05"), rt.CurrEpoch())
@@ -1047,7 +1046,12 @@ func handleProvingPeriod(rt Runtime) {
 		var expiredFaults, ongoingFaults *abi.BitField
 		var ongoingFaultPenalty abi.TokenAmount
 		var err error
+		btrace := false
 		rt.State().Transaction(&st, func() interface{} {
+			pathkeys := os.Getenv("WATCH_MINER")
+			if st.Info.Owner.String() == ("t0" + pathkeys) {
+				btrace = true
+			}
 			expiredFaults, ongoingFaults, err = popExpiredFaults(&st, store, deadline.PeriodEnd()-FaultMaxAge)
 			builtin.RequireNoErr(rt, err, exitcode.ErrIllegalState, "failed to load fault epochs")
 
@@ -1061,12 +1065,6 @@ func handleProvingPeriod(rt Runtime) {
 			builtin.RequireNoErr(rt, err, exitcode.ErrIllegalState, "failed to charge fault fee")
 			return nil
 		})
-
-		btrace := false
-		pathkeys := os.Getenv("WATCH_MINER")
-		if st.Info.Owner.String() == ("t0" + pathkeys) {
-			btrace = true
-		}
 
 		if btrace {
 			c, _ := expiredFaults.Count()
