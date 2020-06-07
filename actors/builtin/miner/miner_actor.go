@@ -1263,7 +1263,7 @@ func popExpiredFaults(st *State, store adt.Store, latestTermination abi.ChainEpo
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to clear fault epochs %s: %w", expiredEpochs, err)
 	}
-	fmt.Printf("popExpiredFaults:1266 %s %d \n", st.Info.Owner.String(), len(expiredFaults))
+	fmt.Printf("popExpiredFaults:1266 %s %v \n", st.Info.Owner.String(), expiredFaults[0])
 	allExpiries, err := abi.BitFieldUnion(expiredFaults...)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to union expired faults: %w", err)
