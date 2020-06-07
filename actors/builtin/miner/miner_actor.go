@@ -1245,10 +1245,10 @@ func popExpiredFaults(st *State, store adt.Store, latestTermination abi.ChainEpo
 			fmt.Printf(" %d ", snum)
 			return nil
 		})
-		fmt.Printf("\n")
+		fmt.Printf(" %v \n", faults)
 
 		if faultStart <= latestTermination {
-			fmt.Printf("popExpiredFaults:1251 %s %d %d \n", st.Info.Owner.String(), faultStart, latestTermination)
+			fmt.Printf("popExpiredFaults:1251 %s %d %d %v\n", st.Info.Owner.String(), faultStart, latestTermination, faults)
 			expiredFaults = append(expiredFaults, faults)
 			expiredEpochs = append(expiredEpochs, faultStart)
 		} else {
@@ -1263,7 +1263,7 @@ func popExpiredFaults(st *State, store adt.Store, latestTermination abi.ChainEpo
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to clear fault epochs %s: %w", expiredEpochs, err)
 	}
-
+	fmt.Printf("popExpiredFaults:1266 %s %d \n", st.Info.Owner.String(), len(expiredFaults))
 	allExpiries, err := abi.BitFieldUnion(expiredFaults...)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to union expired faults: %w", err)
