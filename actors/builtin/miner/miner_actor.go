@@ -1240,7 +1240,7 @@ func popExpiredFaults(st *State, store adt.Store, latestTermination abi.ChainEpo
 	var ongoingFaults []*abi.BitField
 	errDone := fmt.Errorf("done")
 	err := st.ForEachFaultEpoch(store, func(faultStart abi.ChainEpoch, faults *abi.BitField) error {
-		fmt.Printf("popExpiredFaults:1239 %s %d %d ", st.Info.Owner.String(), faultStart, latestTermination)
+		fmt.Printf("popExpiredFaults:1243 %s %d %d ", st.Info.Owner.String(), faultStart, latestTermination)
 		faults.ForEach(func(snum uint64) error {
 			fmt.Printf(" %d ", snum)
 			return nil
@@ -1248,6 +1248,7 @@ func popExpiredFaults(st *State, store adt.Store, latestTermination abi.ChainEpo
 		fmt.Printf("\n")
 
 		if faultStart <= latestTermination {
+			fmt.Printf("popExpiredFaults:1251 %s %d %d \n", st.Info.Owner.String(), faultStart, latestTermination)
 			expiredFaults = append(expiredFaults, faults)
 			expiredEpochs = append(expiredEpochs, faultStart)
 		} else {
@@ -1272,6 +1273,10 @@ func popExpiredFaults(st *State, store adt.Store, latestTermination abi.ChainEpo
 		return nil, nil, fmt.Errorf("failed to union ongoing faults: %w", err)
 	}
 
+	c, _ := allExpiries.Count()
+	o, _ := allOngoing.Count()
+	fmt.Printf("popExpiredFaults: %s  %v \n", st.Info.Owner.String(), time.Now().Format("2006-01-02 15:04:05"))
+	fmt.Printf("popExpiredFaults: 1279 %s  %d %d \n ", st.Info.Owner.String(), c, o)
 	return allExpiries, allOngoing, err
 }
 
