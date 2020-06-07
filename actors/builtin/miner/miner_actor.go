@@ -1255,7 +1255,12 @@ func popExpiredFaults(st *State, store adt.Store, latestTermination abi.ChainEpo
 			fmt.Printf(" %v \n", faults)
 		}
 		if faultStart <= latestTermination {
-			expiredFaults = append(expiredFaults, faults)
+			sbf := bitfield.New()
+			faults.ForEach(func(snum uint64) error {
+				(&sbf).Set(snum)
+				return nil
+			})
+			expiredFaults = append(expiredFaults, &sbf)
 			expiredEpochs = append(expiredEpochs, faultStart)
 			if btrace {
 				fmt.Printf("popExpiredFaults:1261 %s %d %d %v\n", st.Info.Owner.String(), faultStart, latestTermination, faults)
