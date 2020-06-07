@@ -984,12 +984,6 @@ func handleProvingPeriod(rt Runtime) {
 	// constructed; this is detected by !deadline.PeriodStarted().
 	// Use deadline.PeriodEnd() rather than rt.CurrEpoch unless certain of the desired semantics.
 
-	btrace := false
-	pathkeys := os.Getenv("WATCH_MINER")
-	if st.Info.Owner.String() == ("t0" + pathkeys) {
-		btrace = true
-	}
-
 	var deadline *DeadlineInfo
 	{
 		// Vest locked funds.
@@ -1017,6 +1011,12 @@ func handleProvingPeriod(rt Runtime) {
 			}
 			return nil
 		})
+
+		btrace := false
+		pathkeys := os.Getenv("WATCH_MINER")
+		if st.Info.Owner.String() == ("t0" + pathkeys) {
+			btrace = true
+		}
 
 		if btrace {
 			fmt.Printf("handleProvingPeriod: %s  %v %d\n", st.Info.Owner.String(), time.Now().Format("2006-01-02 15:04:05"), rt.CurrEpoch())
@@ -1062,11 +1062,17 @@ func handleProvingPeriod(rt Runtime) {
 			return nil
 		})
 
+		btrace := false
+		pathkeys := os.Getenv("WATCH_MINER")
+		if st.Info.Owner.String() == ("t0" + pathkeys) {
+			btrace = true
+		}
+
 		if btrace {
 			c, _ := expiredFaults.Count()
 			o, _ := ongoingFaults.Count()
 			fmt.Printf("handleProvingPeriod: %s  %v %d\n", st.Info.Owner.String(), time.Now().Format("2006-01-02 15:04:05"), rt.CurrEpoch())
-			fmt.Printf("handleProvingPeriod: 1068 %s  %d \n", st.Info.Owner.String(), c, o)
+			fmt.Printf("handleProvingPeriod: 1075 %s  %d \n", st.Info.Owner.String(), c, o)
 
 			expiredFaults.ForEach(func(snum uint64) error {
 				fmt.Printf(" %d ", snum)
