@@ -1245,22 +1245,24 @@ func popExpiredFaults(st *State, store adt.Store, latestTermination abi.ChainEpo
 		btrace = true
 	}
 
-	err := st.ForEachFaultEpoch(store, func(faultStart abi.ChainEpoch, faults *abi.BitField) error {
+	err := st.ForEachFaultEpoch(store, func(faultStart abi.ChainEpoch, faultsin *abi.BitField) error {
 		if btrace {
 			fmt.Printf("popExpiredFaults:1250 %s %d %d ", st.Info.Owner.String(), faultStart, latestTermination)
-			faults.ForEach(func(snum uint64) error {
+			faultsin.ForEach(func(snum uint64) error {
 				fmt.Printf(" %d ", snum)
 				return nil
 			})
-			fmt.Printf(" %v \n", faults)
+			fmt.Printf(" %v \n", faultsin)
 		}
+
+		faults := abi.NewBitField()
+		faultsin.ForEach(func(snum uint64) error {
+			faults.Set(snum)
+			return nil
+		})
+
 		if faultStart <= latestTermination {
-			sbf := bitfield.New()
-			faults.ForEach(func(snum uint64) error {
-				(&sbf).Set(snum)
-				return nil
-			})
-			expiredFaults = append(expiredFaults, &sbf)
+			expiredFaults = append(expiredFaults, faults)
 			expiredEpochs = append(expiredEpochs, faultStart)
 			if btrace {
 				fmt.Printf("popExpiredFaults:1261 %s %d %d %v\n", st.Info.Owner.String(), faultStart, latestTermination, faults)
